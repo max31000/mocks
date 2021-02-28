@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using FakeItEasy;
 using NUnit.Framework;
 
 namespace MockFramework
@@ -44,7 +45,7 @@ namespace MockFramework
         [SetUp]
         public void SetUp()
         {
-            //thingService = A...
+            thingService = A.Fake<IThingService>();
             thingCache = new ThingCache(thingService);
         }
 
@@ -53,8 +54,38 @@ namespace MockFramework
 
         // Пример теста
         [Test]
-        public void GiveMeAGoodNamePlease()
+        public void CheckCallTryRead()
         {
+            var th = thingCache.Get(thingId1);
+            A.CallTo(() => thingService.TryRead(thingId1, out thing1)).WithAnyArguments().MustHaveHappenedOnceExactly();
+        }
+
+        [Test]
+        public void CheckReadFromService()
+        {
+            Thing thing;
+            A.CallTo(() => thingService.TryRead(thingId1, out thing))
+                .Returns(true)
+                .AssignsOutAndRefParameters(thing1);
+            
+            Assert.AreEqual(thingCache.Get(thingId1), thing1);
+            A.CallTo(() => thingService.TryRead(thingId1, out thing)).WithAnyArguments().MustHaveHappenedOnceExactly();
+        }
+
+        [Test]
+        public void CheckReadFromCache()
+        {
+            Thing thing;
+            A.CallTo(() => thingService.TryRead(thingId1, out thing))
+                .Returns(true)
+                .AssignsOutAndRefParameters(thing1);
+
+            thingCache.Get(thingId1);
+            A.CallTo(() => thingService.TryRead(thingId1, out thing)).WithAnyArguments().MustHaveHappenedOnceExactly();
+
+            Assert.AreEqual(thingCache.Get(thingId1), thing1);
+
+            A.CallTo(() => thingService.TryRead(thingId1, out thing)).WithAnyArguments().MustHaveHappenedOnceExactly();
         }
 
         /** Проверки в тестах
